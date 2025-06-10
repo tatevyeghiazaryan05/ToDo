@@ -22,9 +22,9 @@ def add_todo(
     user_id = token["id"]
     try:
         main.cursor.execute(
-            """INSERT INTO todo (user_id, category, title, description, due_date,)
+            """INSERT INTO todo (user_id, category, title, description, due_date)
              VALUES (%s, %s, %s, %s, %s)""",
-            (user_id, category, title, description, due_date,)
+            (user_id, category, title, description, due_date)
         )
         main.conn.commit()
 

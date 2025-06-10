@@ -72,3 +72,7 @@ def get_todo_by_due_date(deadline: date, token=Depends(get_current_user)):
         main.cursor.fetchall()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching todo info: {str(e)}")
+
+
+
+# todo change and create a todo_crud.py file where will be add,get,update,delete  and other things in new todo_core.py where will be another get apies

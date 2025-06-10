@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, text, TIMESTAMP,ForeignKey, Date, Boolean
+from sqlalchemy import Column, String, Integer, text, TIMESTAMP, ForeignKey, Date, Boolean
 
 from database import Base
 
@@ -16,7 +16,7 @@ class Todo(Base):
     __tablename__ = "todo"
 
     id = Column(Integer, primary_key=True, nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"),nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     title = Column(String, nullable=False)
     description = Column(String, nullable=True)
     category = Column(String, nullable=False)
