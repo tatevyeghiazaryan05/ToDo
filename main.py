@@ -1,12 +1,10 @@
-import os
-
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
 from fastapi import FastAPI
 from auth import authrouter
-from User_ToDo_service import user_add_todo_service
-from User_ToDo_service import user_change_todo_service
+from todo_CRUD import todo_router
+from todo_core import todo_core_router
 
 conn = psycopg2.connect(
     host="localhost",
@@ -22,5 +20,5 @@ cursor = conn.cursor()
 app = FastAPI()
 
 app.include_router(authrouter)
-app.include_router(user_add_todo_service.todo_router)
-app.include_router(user_change_todo_service.todo_router)
+app.include_router(todo_router)
+app.include_router(todo_core_router)

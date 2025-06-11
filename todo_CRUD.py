@@ -46,11 +46,6 @@ def get_todo(token=Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=f"Error fetching todo info: {str(e)}")
 
 
-
-
-todo_router = APIRouter()
-
-
 @todo_router.put("/api/todo/change")
 def update_todo(updates: TodoUpdateSchema, token=Depends(get_current_user)):
     user_id = token["id"]
