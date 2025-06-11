@@ -54,43 +54,5 @@
 #         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
 
-from fastapi import APIRouter, Depends, HTTPException
-
-import main
-from security import get_current_user
-from Todo_Update_Schema import TodoUpdateSchema
-
-todo_router = APIRouter()
-
-
-@todo_router.put("/api/todo/change")
-def update_todo(updates: TodoUpdateSchema, token=Depends(get_current_user)):
-    user_id = token["id"]
-
-    try:
-        if updates.title is not None:
-            main.cursor.execute("UPDATE todo SET title=%s WHERE user_id=%s", (updates.title, user_id))
-            main.conn.commit()
-
-        if updates.description is not None:
-            main.cursor.execute("UPDATE todo SET description=%s WHERE user_id=%s", (updates.description, user_id))
-            main.conn.commit()
-
-        if updates.category is not None:
-            main.cursor.execute("UPDATE todo SET category=%s WHERE user_id=%s", (updates.category, user_id))
-            main.conn.commit()
-
-        if updates.status is not None:
-            main.cursor.execute("UPDATE todo SET status=%s WHERE user_id=%s", (updates.status, user_id))
-            main.conn.commit()
-
-        if updates.due_date is not None:
-            main.cursor.execute("UPDATE todo SET due_date=%s WHERE user_id=%s", (updates.due_date, user_id))
-            main.conn.commit()
-
-        return "Todo updated successfully!!"
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 # todo  write schema in other file +
