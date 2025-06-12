@@ -23,4 +23,5 @@ class Todo(Base):
     due_date = Column(Date)
     status = Column(Boolean, default=False)
     archived = Column(Boolean, default=False)
+    updated_at = Column(TIMESTAMP, nullable=False, server_default=text("now()"))
     created_at = Column(TIMESTAMP, nullable=False, server_default=text("now()"))

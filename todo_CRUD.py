@@ -1,5 +1,4 @@
-from datetime import date
-
+from datetime import date, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Form
 
@@ -7,17 +6,16 @@ import main
 from security import get_current_user
 from Todo_Update_Schema import TodoUpdateSchema
 
-
 todo_router = APIRouter()
 
 
 @todo_router.post("/api/todo/add/todo")
 def add_todo(
-    title: str = Form(...),
-    description: str = Form(...),
-    category: str = Form(...),
-    due_date: date = Form(...),
-    token=Depends(get_current_user)
+        title: str = Form(...),
+        description: str = Form(...),
+        category: str = Form(...),
+        due_date: date = Form(...),
+        token=Depends(get_current_user)
 
 ):
     user_id = token["id"]
@@ -46,32 +44,27 @@ def get_todo(token=Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=f"Error fetching todo info: {str(e)}")
 
 
-@todo_router.put("/api/todo/change")
-def update_todo(updates: TodoUpdateSchema, token=Depends(get_current_user)):
-    user_id = token["id"]
-
+@todo_router.put("/api/todo/change/{todo_id}")
+def update_todo(updates: TodoUpdateSchema, todo_id: int, token=Depends(get_current_user)):
     try:
-        if updates.title is not None:
-            main.cursor.execute("UPDATE todo SET title=%s WHERE user_id=%s", (updates.title, user_id))
-            main.conn.commit()
+        main.cursor.execute("""SELECT * FROM todo WHERE id=%s""", (todo_id,))
+        todo = dict(main.cursor.fetchone())
 
-        if updates.description is not None:
-            main.cursor.execute("UPDATE todo SET description=%s WHERE user_id=%s", (updates.description, user_id))
-            main.conn.commit()
+        update_data = updates.model_dump()
 
-        if updates.category is not None:
-            main.cursor.execute("UPDATE todo SET category=%s WHERE user_id=%s", (updates.category, user_id))
-            main.conn.commit()
+        for key, value in update_data.items():
+            if value is None:
+                setattr(updates, key, todo[key])
+        updated_at = datetime.now()
 
-        if updates.status is not None:
-            main.cursor.execute("UPDATE todo SET status=%s WHERE user_id=%s", (updates.status, user_id))
-            main.conn.commit()
-
-        if updates.due_date is not None:
-            main.cursor.execute("UPDATE todo SET due_date=%s WHERE user_id=%s", (updates.due_date, user_id))
-            main.conn.commit()
-
-        return "Todo updated successfully!!"
+        main.cursor.execute("""
+            UPDATE todo SET 
+                title=%s, description=%s, category=%s, status=%s, due_date=%s ,updated_at=%s
+            WHERE id=%s
+            """,
+                            (updates.title, updates.description, updates.category, updates.status,
+                             updates.due_date, updated_at, todo_id))
+        main.conn.commit()
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -63,8 +63,9 @@ def user_login(login_data: UserLoginSchema):
             user_id_db = user.get("id")
             user_email_db = user.get("email")
 
-        return create_access_token({"id": user_id_db,
+        token = create_access_token({"id": user_id_db,
                                     "email": user_email_db})
+        return {"access_token": token}
 
     except HTTPException:
         raise
