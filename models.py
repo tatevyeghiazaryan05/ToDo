@@ -25,3 +25,18 @@ class Todo(Base):
     archived = Column(Boolean, default=False)
     updated_at = Column(TIMESTAMP, nullable=False, server_default=text("now()"))
     created_at = Column(TIMESTAMP, nullable=False, server_default=text("now()"))
+
+
+class ArchiveTodo(Base):
+    __tablename__ = "archivetodo"
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    todo_id = Column(Integer, ForeignKey("todo.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    title = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    category = Column(String, nullable=False)
+    due_date = Column(Date)
+    status = Column(Boolean, default=False)
+    updated_at = Column(TIMESTAMP, nullable=False, server_default=text("now()"))
+    created_at = Column(TIMESTAMP, nullable=False, server_default=text("now()"))
