@@ -37,6 +37,6 @@ class ArchiveTodo(Base):
     description = Column(String, nullable=True)
     category = Column(String, nullable=False)
     due_date = Column(Date)
-    status = Column(Boolean, default=False)
+    status = Column(Boolean, server_default="false")
     updated_at = Column(TIMESTAMP, nullable=False, server_default=text("now()"))
     created_at = Column(TIMESTAMP, nullable=False, server_default=text("now()"))
