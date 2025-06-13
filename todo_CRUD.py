@@ -39,7 +39,9 @@ def get_todo(token=Depends(get_current_user)):
     try:
         main.cursor.execute("SELECT * FROM todo where user_id=%s",
                             (user_id,))
-        main.cursor.fetchall()
+        todo = main.cursor.fetchall()
+        return todo
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching todo info: {str(e)}")
 
