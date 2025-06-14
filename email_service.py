@@ -9,8 +9,6 @@ SMTP_PORT = 587
 EMAIL_SENDER = "tatevikyeghiazaryann5@gmail.com"
 EMAIL_PASSWORD = "klcm ecsh nfcb xhzs"
 
-verification_codes = {}
-
 
 def generate_verification_code(length=8):
 
@@ -18,9 +16,8 @@ def generate_verification_code(length=8):
     return ''.join(secrets.choice(characters) for _ in range(length))
 
 
-def send_verification_email(user_email):
+def send_verification_email(user_email, code):
     """Send verification code to user email"""
-    code = generate_verification_code()
 
     msg = EmailMessage()
     msg["Subject"] = "Click here "
@@ -33,7 +30,7 @@ def send_verification_email(user_email):
             server.starttls()
             server.login(EMAIL_SENDER, EMAIL_PASSWORD)
             server.send_message(msg)
-        return code
+        return True
     except Exception as e:
         print("Error sending email:", e)
         return False

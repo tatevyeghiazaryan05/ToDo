@@ -1,13 +1,14 @@
+from datetime import datetime, timedelta
+
 from fastapi import APIRouter, HTTPException, status, Form
 
 import main
 from schemas import UserLoginSchema
 from security import pwd_context, create_access_token
+from email_service import send_verification_email, generate_verification_code
+
 
 authrouter = APIRouter()
-
-UPLOAD_DIRECTORY = "uploads"
-BASE_URL = "http://localhost:8000"
 
 
 @authrouter.post("/api/user/auth/sign-up")
@@ -16,21 +17,66 @@ def user_signup(
     email: str = Form(...),
     password: str = Form(...),
 ):
-
     try:
+        main.cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
+        if main.cursor.fetchone():
+            raise HTTPException(status_code=400, detail="Email already registered.")
+
+        code = generate_verification_code()
         hashed_password = pwd_context.hash(password)
 
-        main.cursor.execute("""INSERT INTO users (name,email,password) VALUES(%s,%s,%s)""",
-                        (name, email, hashed_password))
+        main.cursor.execute("""
+            INSERT INTO verificationcode (code, email, name, password) 
+            VALUES (%s, %s, %s, %s)""",
+                            (code, email, name, hashed_password))
         main.conn.commit()
 
-        return "Sign Up Successfully!!"
+        email_sent = send_verification_email(email, code)
+        if not email_sent:
+            raise HTTPException(status_code=500, detail="Failed to send verification email.")
+
+        return "Verification code sent to your email. Please verify within 15 minutes."
 
     except Exception as e:
-        main.conn.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An error occurred during sign-up: {str(e)}"
+            detail=f"Sign-up error: {str(e)}"
+        )
+
+
+@authrouter.post("/api/user/auth/verify")
+def verify_user(code: str = Form(...)):
+    try:
+        main.cursor.execute("SELECT * FROM verificationcode WHERE code = %s", (code,))
+        data = main.cursor.fetchone()
+
+        if not data:
+            raise HTTPException(status_code=400, detail="Invalid verification code.")
+        created_at = data.get("created_at")
+
+        expiration_time = created_at + timedelta(minutes=15)
+        if datetime.now() > expiration_time:
+            main.cursor.execute("DELETE FROM verificationcode WHERE id = %s", (data.get("id"),))
+            main.conn.commit()
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Verification code has expired after 15 minutes."
+            )
+
+        main.cursor.execute("""
+            INSERT INTO users (name, email, password) VALUES (%s, %s, %s)
+        """, (data.get("name"), data.get("email"), data.get("password")))
+        main.conn.commit()
+
+        main.cursor.execute("DELETE FROM verificationcode WHERE id = %s", (data.get("id"),))
+        main.conn.commit()
+
+        return "Email verified and user registered successfully!"
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Verification failed: {str(e)}"
         )
 
 
