@@ -40,3 +40,11 @@ class ArchiveTodo(Base):
     status = Column(Boolean, server_default="false")
     updated_at = Column(TIMESTAMP, nullable=False, server_default=text("now()"))
     created_at = Column(TIMESTAMP, nullable=False, server_default=text("now()"))
+
+
+class VerificationCode(Base):
+    __tablename__ = "verificationcode"
+    id = Column(Integer, nullable=False, primary_key=True)
+    code = Column(String, nullable=False)
+    email = Column(String, nullable=False)
+    created_at = Column(TIMESTAMP, nullable=False, server_default=text("now()"))
