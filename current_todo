@@ -1,5 +1,2 @@
-# todo add column 'updated_at' +
-# todo add notification api
-# todo maile verification while sign up+
-# todo deploy+
-# todo add archive table+
+# todo notification deploy
+# todo change user sign-up api that user can sign up after that be verification

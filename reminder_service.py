@@ -13,12 +13,14 @@ def check_reminders():
 
         try:
             tasks = db.query(Todo).filter(
-                Todo.archived == False,
-                Todo.status == False,
+                Todo.archived == None,
+                Todo.status == None,
                 Todo.due_date != None
             ).all()
+            print(tasks)
 
             for task in tasks:
+                print(task)
                 time_left = task.due_date - now.date()
 
                 if timedelta(days=0) <= time_left <= timedelta(days=1):
@@ -41,3 +43,5 @@ def check_reminders():
 
         print("⏳ Waiting 5 minutes for next check...")
         time.sleep(300)
+
+check_reminders()

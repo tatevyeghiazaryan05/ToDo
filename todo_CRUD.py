@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Form
+from fastapi import APIRouter, Depends, HTTPException, Form, status
 
 import main
 from security import get_current_user
@@ -50,7 +50,12 @@ def get_todo(token=Depends(get_current_user)):
 def update_todo(updates: TodoUpdateSchema, todo_id: int, token=Depends(get_current_user)):
     try:
         main.cursor.execute("""SELECT * FROM todo WHERE id=%s""", (todo_id,))
-        todo = dict(main.cursor.fetchone())
+        todo = main.cursor.fetchone()
+        if todo is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        todo = dict(todo)
 
         update_data = updates.model_dump()
 
