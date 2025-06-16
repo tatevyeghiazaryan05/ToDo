@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, HTTPException, status, Form
 
 import main
-from schemas import UserLoginSchema
+from schemas import UserLoginSchema, VerificationCodeSchema
 from security import pwd_context, create_access_token
 from email_service import send_verification_email, generate_verification_code
 
@@ -22,24 +22,27 @@ def user_signup(
         if main.cursor.fetchone():
             raise HTTPException(status_code=400, detail="Email already registered.")
 
-        code = generate_verification_code()
         hashed_password = pwd_context.hash(password)
 
-        main.cursor.execute("""INSERT INTO users (name, email, password) VALUES (%s, %s, %s)""",
-                            (name, email, hashed_password))
+        main.cursor.execute("""
+            INSERT INTO users (name, email, password)
+            VALUES (%s, %s, %s) RETURNING id
+        """, (name, email, hashed_password))
+        user_id = main.cursor.fetchone()[0]
         main.conn.commit()
 
-        main.cursor.execute("""
-            INSERT INTO verificationcode (code, email, name, password) 
-            VALUES (%s, %s, %s, %s)""",
-                            (code, email, name, hashed_password))
+        code = generate_verification_code()
+
+        main.cursor.execute("""INSERT INTO verificationcode 
+                            (code, user_id) VALUES (%s, %s)""",
+                            (code, user_id))
         main.conn.commit()
 
         email_sent = send_verification_email(email, code)
         if not email_sent:
             raise HTTPException(status_code=500, detail="Failed to send verification email.")
 
-        return "Verification code sent to your email. Please verify within 15 minutes."
+        return {"message": "Verification code sent to your email. Please verify within 15 minutes."}
 
     except Exception as e:
         raise HTTPException(
@@ -49,14 +52,25 @@ def user_signup(
 
 
 @authrouter.post("/api/user/auth/verify")
-def verify_user(code: str = Form(...)):
+def verify_user(verification_data: VerificationCodeSchema):
     try:
-        main.cursor.execute("SELECT * FROM verificationcode WHERE code = %s", (code,))
+        main.cursor.execute("SELECT id FROM verificationcode WHERE email = %s",
+                            (verification_data.email,))
+        user = main.cursor.fetchone()
+
+        if not user:
+            raise HTTPException(status_code=400, detail="User not found.")
+        user_id = user[0]
+
+        main.cursor.execute("""SELECT * FROM verificationcode 
+                            WHERE user_id = %s AND code = %s""",
+                            (user_id, verification_data.code))
         data = main.cursor.fetchone()
 
         if not data:
             raise HTTPException(status_code=400, detail="Invalid verification code.")
-        created_at = data.get("created_at")
+
+        created_at = data['created_at']
 
         expiration_time = created_at + timedelta(minutes=15)
         if datetime.now() > expiration_time:
@@ -67,15 +81,14 @@ def verify_user(code: str = Form(...)):
                 detail="Verification code has expired after 15 minutes."
             )
 
-        main.cursor.execute("""
-            INSERT INTO users (name, email, password) VALUES (%s, %s, %s)
-        """, (data.get("name"), data.get("email"), data.get("password")))
+        main.cursor.execute("""Update users SET verified=%s WHERE user_id=%s""",
+                            ("true", user_id))
         main.conn.commit()
 
         main.cursor.execute("DELETE FROM verificationcode WHERE id = %s", (data.get("id"),))
         main.conn.commit()
 
-        return "Email verified and user registered successfully!"
+        return "Email verified successfully!"
 
     except Exception as e:
         raise HTTPException(
@@ -91,7 +104,7 @@ def user_login(login_data: UserLoginSchema):
         password = login_data.password
 
         main.cursor.execute("""SELECT * FROM users WHERE  email = %s""",
-                        (email,))
+                            (email,))
 
         user = main.cursor.fetchone()
         if user is None:
