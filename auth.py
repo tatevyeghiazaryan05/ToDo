@@ -25,6 +25,10 @@ def user_signup(
         code = generate_verification_code()
         hashed_password = pwd_context.hash(password)
 
+        main.cursor.execute("""INSERT INTO users (name, email, password) VALUES (%s, %s, %s)""",
+                            (name, email, hashed_password))
+        main.conn.commit()
+
         main.cursor.execute("""
             INSERT INTO verificationcode (code, email, name, password) 
             VALUES (%s, %s, %s, %s)""",

@@ -9,6 +9,7 @@ class Users(Base):
     name = Column(String, nullable=False)
     email = Column(String, nullable=False)
     password = Column(String, nullable=False)
+    verified = Column(Boolean, server_default="false")
     created_at = Column(TIMESTAMP, nullable=False, server_default=text("now()"))
 
 
