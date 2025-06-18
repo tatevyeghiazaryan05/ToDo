@@ -51,30 +51,42 @@ def update_todo(updates: TodoUpdateSchema, todo_id: int, token=Depends(get_curre
     try:
         main.cursor.execute("""SELECT * FROM todo WHERE id=%s""", (todo_id,))
         todo = main.cursor.fetchone()
-        if todo is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-            )
-        todo = dict(todo)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching todo: {str(e)}")
 
+    if todo is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Todo not found!"
+        )
+
+    try:
+        todo = dict(todo)
         update_data = updates.model_dump()
 
         for key, value in update_data.items():
             if value is None:
                 setattr(updates, key, todo[key])
+
         updated_at = datetime.now()
 
         main.cursor.execute("""
             UPDATE todo SET 
-                title=%s, description=%s, category=%s, status=%s, due_date=%s ,updated_at=%s
+                title=%s, description=%s, category=%s, status=%s, due_date=%s, updated_at=%s
             WHERE id=%s
             """,
-                            (updates.title, updates.description, updates.category, updates.status,
-                             updates.due_date, updated_at, todo_id))
-        main.conn.commit()
-
+            (updates.title, updates.description, updates.category, updates.status,
+             updates.due_date, updated_at, todo_id)
+        )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Error updating todo: {str(e)}")
+
+    try:
+        main.conn.commit()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error committing changes: {str(e)}")
+
+    return {"message": "Todo updated successfully."}
 
 
 @todo_router.delete("/api/todo/delete/todo")
