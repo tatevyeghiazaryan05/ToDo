@@ -26,9 +26,6 @@ def add_todo(
             (user_id, category, title, description, due_date)
         )
         main.conn.commit()
-
-        return {"message": "ToDo  added successfully"}
-
     except Exception:
         raise HTTPException(status_code=500, detail="Server error during todo addition")
 
@@ -39,20 +36,27 @@ def get_todo(token=Depends(get_current_user)):
     try:
         main.cursor.execute("SELECT * FROM todo where user_id=%s",
                             (user_id,))
+    except Exception:
+        raise HTTPException(status_code=500, detail="Error fetching todo info")
+
+    try:
         todo = main.cursor.fetchall()
         return todo
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching todo info: {str(e)}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Database fetch error")
 
 
 @todo_router.put("/api/todo/change/{todo_id}")
 def update_todo(updates: TodoUpdateSchema, todo_id: int, token=Depends(get_current_user)):
     try:
         main.cursor.execute("""SELECT * FROM todo WHERE id=%s""", (todo_id,))
+    except Exception:
+        raise HTTPException(status_code=500, detail="Error fetching todo")
+
+    try:
         todo = main.cursor.fetchone()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching todo: {str(e)}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Database fetch error")
 
     if todo is None:
         raise HTTPException(
@@ -78,15 +82,9 @@ def update_todo(updates: TodoUpdateSchema, todo_id: int, token=Depends(get_curre
             (updates.title, updates.description, updates.category, updates.status,
              updates.due_date, updated_at, todo_id)
         )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error updating todo: {str(e)}")
-
-    try:
         main.conn.commit()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error committing changes: {str(e)}")
-
-    return {"message": "Todo updated successfully."}
+    except Exception:
+        raise HTTPException(status_code=500, detail="Error updating todo")
 
 
 @todo_router.delete("/api/todo/delete/todo")
@@ -96,8 +94,5 @@ def delete_todo(token=Depends(get_current_user)):
         main.cursor.execute("DELETE FROM todo WHERE user_id=%s",
                             (user_id,))
         main.conn.commit()
-
-        return {"message": "ToDo  deleted successfully"}
-
     except Exception:
         raise HTTPException(status_code=500, detail="Server error during todo deletion")

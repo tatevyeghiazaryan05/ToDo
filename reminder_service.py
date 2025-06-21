@@ -17,10 +17,8 @@ def check_reminders():
                 Todo.status == None,
                 Todo.due_date != None
             ).all()
-            print(tasks)
 
             for task in tasks:
-                print(task)
                 time_left = task.due_date - now.date()
 
                 if timedelta(days=0) <= time_left <= timedelta(days=1):

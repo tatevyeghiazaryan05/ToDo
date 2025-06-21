@@ -31,6 +31,6 @@ def send_verification_email(user_email, code):
             server.login(EMAIL_SENDER, EMAIL_PASSWORD)
             server.send_message(msg)
         return True
-    except Exception as e:
-        print("Error sending email:", e)
+    except Exception:
+        print("Error sending email:")
         return False

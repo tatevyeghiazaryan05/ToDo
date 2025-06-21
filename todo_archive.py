@@ -15,17 +15,15 @@ def archive_todo(todo_id: int, token=Depends(get_current_user)):
             SELECT id, user_id, title, description, category, due_date, status, updated_at, created_at
             FROM todo WHERE id = %s
         """, (todo_id,))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error archiving todo: {str(e)}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Error archiving todo")
 
     try:
         main.cursor.execute("DELETE FROM todo WHERE id = %s", (todo_id,))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error deleting todo: {str(e)}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Error deleting todo")
 
     try:
         main.conn.commit()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error committing changes: {str(e)}")
-
-    return {"message": "Todo archived successfully."}
+    except Exception:
+        raise HTTPException(status_code=500, detail="Error committing changes")

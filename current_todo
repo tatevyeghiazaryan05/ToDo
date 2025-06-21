@@ -1,1 +1,4 @@
-# todo for fetch another try except
+# todo for fetch another try except +
+# todo remove returns +
+# todo remove in error ->str(e) +
+# todo in filter file write date range, api is: get /all/by/due_date/
