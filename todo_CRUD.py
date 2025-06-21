@@ -40,10 +40,15 @@ def get_todo(token=Depends(get_current_user)):
         raise HTTPException(status_code=500, detail="Error fetching todo info")
 
     try:
-        todo = main.cursor.fetchall()
-        return todo
+        todos = main.cursor.fetchall()
+
     except Exception:
         raise HTTPException(status_code=500, detail="Database fetch error")
+
+    if todos is None:
+        raise HTTPException(status_code=404, detail="No ToDo found in this date range")
+    else:
+        return todos
 
 
 @todo_router.put("/api/todo/change/{todo_id}")

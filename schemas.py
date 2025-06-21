@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel
 
 
@@ -9,3 +11,8 @@ class UserLoginSchema(BaseModel):
 class VerificationCodeSchema(BaseModel):
     email: str
     code: str
+
+
+class ToDoDateSchema(BaseModel):
+    start_date: datetime
+    end_date: datetime

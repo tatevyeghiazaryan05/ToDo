@@ -24,9 +24,12 @@ def user_signup(
         raise HTTPException(status_code=500, detail="Database query error")
 
     try:
-        main.cursor.fetchone()
+        user = main.cursor.fetchone()
     except Exception:
         raise HTTPException(status_code=500, detail="Database fetch error")
+
+    if user is None:
+        raise HTTPException(status_code=404, detail="No User found in this date range")
 
     try:
         hashed_password = pwd_context.hash(password)
