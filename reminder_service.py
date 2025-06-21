@@ -42,6 +42,6 @@ def check_reminders():
             db.close()
 
         print("⏳ Waiting 5 minutes for next check...")
-        time.sleep(300)
+        time.sleep(7200)
 
 check_reminders()

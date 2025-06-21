@@ -22,12 +22,12 @@ def user_signup(
         if main.cursor.fetchone():
             raise HTTPException(status_code=400, detail="Email already registered.")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database query error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database query error")
 
     try:
         hashed_password = pwd_context.hash(password)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error hashing password: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error hashing password")
 
     try:
         main.cursor.execute("""
@@ -36,7 +36,7 @@ def user_signup(
         """, (name, email, hashed_password))
         user_id = main.cursor.fetchone()[0]
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error inserting user: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error inserting user")
 
     main.conn.commit()
 
@@ -46,7 +46,7 @@ def user_signup(
         main.cursor.execute("""INSERT INTO verificationcode (code, user_id) VALUES (%s, %s)""",
                             (code, user_id))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error inserting verification code: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error inserting verification code")
 
     main.conn.commit()
 
@@ -55,7 +55,7 @@ def user_signup(
         if not email_sent:
             raise HTTPException(status_code=500, detail="Failed to send verification email.")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error sending verification email: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error sending verification email")
 
     return {"message": "Verification code sent to your email. Please verify within 15 minutes."}
 
@@ -66,14 +66,14 @@ def verify_user(verification_data: VerificationCodeSchema):
         main.cursor.execute("SELECT id FROM users WHERE email = %s", (verification_data.email,))
         user = main.cursor.fetchone()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database query error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database query error")
 
     try:
         if not user:
             raise HTTPException(status_code=400, detail="User not found.")
         user_id = user[0]
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching user: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error fetching user")
 
     try:
         main.cursor.execute("""SELECT * FROM verificationcode 
@@ -81,13 +81,13 @@ def verify_user(verification_data: VerificationCodeSchema):
                             (user_id, verification_data.code))
         data = main.cursor.fetchone()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database query error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database query error")
 
     try:
         if not data:
             raise HTTPException(status_code=400, detail="Invalid verification code.")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching verification code: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error fetching verification code")
 
     created_at = data['created_at']
     expiration_time = created_at + timedelta(minutes=15)
@@ -96,7 +96,7 @@ def verify_user(verification_data: VerificationCodeSchema):
             main.cursor.execute("DELETE FROM verificationcode WHERE id = %s", (data.get("id"),))
             main.conn.commit()
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error deleting expired code: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Error deleting expired code")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Verification code has expired after 15 minutes."
@@ -107,13 +107,13 @@ def verify_user(verification_data: VerificationCodeSchema):
                             ("true", user_id))
         main.conn.commit()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error updating user as verified: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error updating user as verified")
 
     try:
         main.cursor.execute("DELETE FROM verificationcode WHERE id = %s", (data.get("id"),))
         main.conn.commit()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error deleting verification code: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error deleting verification code")
 
     return "Email verified successfully!"
 
@@ -127,7 +127,7 @@ def user_login(login_data: UserLoginSchema):
         main.cursor.execute("""SELECT * FROM users WHERE email = %s""", (email,))
         user = main.cursor.fetchone()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database query error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database query error")
 
     if user is None:
         raise HTTPException(
@@ -139,7 +139,7 @@ def user_login(login_data: UserLoginSchema):
         user = dict(user)
         user_password_db = user.get("password")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing user data: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error processing user data")
 
     try:
         if not pwd_context.verify(password, user_password_db):
@@ -148,7 +148,7 @@ def user_login(login_data: UserLoginSchema):
                 detail="Password is not correct!"
             )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Password verification error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Password verification error")
 
     try:
         user_id_db = user.get("id")
@@ -156,6 +156,6 @@ def user_login(login_data: UserLoginSchema):
 
         token = create_access_token({"id": user_id_db, "email": user_email_db})
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Token creation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Token creation error")
 
     return {"access_token": token}
